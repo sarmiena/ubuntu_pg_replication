@@ -14,6 +14,8 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
 
   ```
   administrator@pg:~$ sudo -s
+  root@pg:~# sysctl -w vm.overcommit_ratio=100
+  root@pg:~# sysctl -w vm.overcommit_memory=2
   root@pg:~# apt-get install postgresql-9.1
   root@pg:~# su - postgres
   ```
@@ -131,7 +133,7 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
     * Above 32GB - set to 8GB
   * OOM Killer Considered Harmful
     * The Linux OOM killer is a bug, not a feature, on Postresql servers
-      * vm.overcommit_ration = 100
+      * vm.overcommit_ratio = 100
       * vm.overcommit_memory = 2
       * Swap = RAM
   * work_mem: 

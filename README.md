@@ -38,13 +38,13 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
 3. Slave:
 
   ```
+  postgres@pgslave:~$ pg_ctlcluster 9.1 main stop
   postgres@pgslave:~$ vi /etc/postgres/9.1/main/postgres.conf
 
     listen_addresses = '*'
     hot_standby = on
 
   postgres@pgslave:~$ vi /var/lib/postgres/9.1/main/recovery.conf
-  postgres@pgslave:~$ pg_ctlcluster 9.1 main stop
 
     standby_mode = on
     primary_conninfo = "host=192.168.1.100 port=5433 user=rep_user password=seekrit"

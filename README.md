@@ -41,7 +41,7 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
 
   # Maximum total size of shared memory in pages (normally 4096 bytes)
   # shmmax/4096
-  kernel.shmall = 107216896
+  kernel.shmall = 104704
   
   root@pg:~# sysctl -f /etc/sysctl.d/30-postgresql-shm.conf
   ```

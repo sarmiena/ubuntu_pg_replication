@@ -44,11 +44,16 @@ end
 if @memory.nil? || @file.nil?
   puts "see --help"
 else
+
+  # Rule of thumb:
+  # Total system memory below 2GB?  set to 20% of total system memory
+  # Total system memory below 32GB? set to 25% of total system memory
+  # Total system memory above 32GB? set to 8GB
   shared_buffers = case 
                    when @memory <= 2048
-                     @memory*0.2
+                     @memory*0.15
                    when @memory <= 1024*32 #32GB
-                     @memory*0.25
+                     @memory*0.20
                    else
                      8
                    end.to_i
@@ -78,7 +83,7 @@ else
     'log_connections'       => "on",
     'log_disconnections'    => "on",
     'log_lock_waits'        => "on",
-    'log_temp_files'        => "on",
+    'log_temp_files'        => "0",
     'log_line_prefix'       => "'%t '"
   }
 

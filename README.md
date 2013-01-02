@@ -30,10 +30,12 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   postgres=# \password
   postgres=# \q
   ```
-  * Run pg_replication_config script (included in this repo)
+  * Run master_config_generator script (included in this repo)
   
   ```
-  postgres@pg:~$ ./pg_replication_config --memory 2048 --file /etc/postgres/9.1/main/postgres.conf
+  postgres@pg:~$ ./master_config_generator --help; # -m and -f are required
+  postgres@pg:~$ ./master_config_generator --memory 2048 --file /etc/postgres/9.1/main/postgres.conf
+  postgres@pg:~$ pg_ctlcluster 9.1 main restart
   ```
 3. Slave:
 
@@ -49,11 +51,16 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
     standby_mode = on
     primary_conninfo = "host=192.168.1.100 port=5433 user=rep_user password=seekrit"
   ```
-  * Run master_basebackup script
+  * Run master_basebackup script (included in this repo)
+  
   ```
-  postgres@pgslave:~$ master_basebackup 192.168.1.100
+  postgres@pgslave:~$ master_basebackup 192.168.1.100; # Use IP of Master
   ```
-4. Test it out by creating a table on Master (via psql) & it should be streamed to Slave
+4. Test it out by creating a table on Master (via psql) & it should be streamed to Slave. If it is not, check logs on slave:
+
+  ```
+  postgres@pgslave:~$ tail -f /var/log/postgresql
+  ```
 
 # Important Notes (Highly recommended) 
 * Based on Christophe Pettus' talk in Argentina: https://www.youtube.com/watch?v=k4f24zn5D4s

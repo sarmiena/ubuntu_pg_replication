@@ -55,8 +55,8 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   ```
 4. Test it out by creating a table on Master (via psql) & it should be streamed to Slave
 
-# Important Notes (https://www.youtube.com/watch?v=k4f24zn5D4s)
-
+# Important Notes (Highly recommended) 
+* Based on Christophe Pettus' talk in Argentina: https://www.youtube.com/watch?v=k4f24zn5D4s
 * (term) cluster: This term is somewhat confusing this day in age, but in the PostgreSQL world, 'cluster' refers to a single PostgreSQL instance running on a single box.
 * initdb: creates a cluster (sadly initdb is named in direct conflict with the term above to produce more confusion)
   * creates files that will hold the cluster

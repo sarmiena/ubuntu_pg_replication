@@ -44,13 +44,23 @@ end
 if @memory.nil? || @file.nil?
   puts "see --help"
 else
-  shared_buffers = @memory*0.25
-  shared_buffers = 1024*8 if shared_buffers > 1024*8
+  shared_buffers = case 
+                   when @memory <= 2048
+                     @memory*0.2
+                   when @memory <= 1024*32 #32GB
+                     @memory*0.25
+                   else
+                     8
+                   end.to_i
+
+  maintenance_work_mem = (@memory/16).to_i
+  maintenance_work_mem = 32 if maintenance_work_mem < 32
+
   hardware = {
-    'listen_address'        => "'*'",
-    'shared_buffers'        => "#{shared_buffers}MB # 25% of memory to 8GB",
+    'listen_addresses'      => "'*'",
+    'shared_buffers'        => "#{shared_buffers.to_i}MB # Range should be 20% of memory to 8GB",
     'work_mem'              => "#{((2*@memory)/@connections).to_i}MB # (2*RAM)/max_connections",
-    'maintenance_work_mem'  => "#{(@memory/16).to_i}MB # RAM/16",
+    'maintenance_work_mem'  => "#{maintenance_work_mem}MB # RAM/16",
     'effective_cache_size'  => "#{(@memory/2).to_i}MB # RAM/2",
     'max_connections'       => "#{@connections} # Should be no more than 400",
     'random_page_cost'      => "3.0 # change to 2.0 if using SAN or 1.1 if using Amazon EBS"

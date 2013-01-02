@@ -315,5 +315,3 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   * pg_basebackup - built in tool for doing a base backup to prime a secondary
   * repmgr.org
 
-== Start ==
-

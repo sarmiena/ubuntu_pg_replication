@@ -20,14 +20,12 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   root@pg:~# sysctl -w vm.overcommit_ratio=100
   root@pg:~# sysctl -w vm.overcommit_memory=2
   ```
-  
   * Next, let's install PostgreSQL
   
   ```
   root@pg:~# apt-get install postgresql-9.1
   root@pg:~# pg_ctlcluster 9.1 main stop; # We don't need PG to be running right now
   ```
-
   * Then we need to set SHMMAX and SHMALL to allow PostgreSQL to load shared memory correctly:
   
   ```
@@ -47,7 +45,6 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   
   root@pg:~# sysctl -f /etc/sysctl.d/30-postgresql-shm.conf
   ```
-  
   * Lastly, let's login as our postgres user for the next steps (Note: This user is created for you when
   PostgreSQL was installed. No need to create a new user):
   
@@ -96,7 +93,7 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
 4. Test it out by creating a table on Master (via psql) & it should be streamed to Slave. If it is not, check logs on slave:
 
   ```
-  postgres@pgslave:~$ tail -f /var/log/postgresql
+  postgres@pgslave:~$ tail -f /var/log/postgresql/postgresql-9.1-main.log
   ```
 
 # Important Notes (Highly recommended) 

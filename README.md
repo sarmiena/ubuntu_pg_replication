@@ -85,10 +85,10 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
     standby_mode = on
     primary_conninfo = "host=192.168.1.100 port=5433 user=rep_user password=seekrit"
   ```
-  * Run master_basebackup script (included in this repo)
+  * Run slave_basebackup script (included in this repo)
   
   ```
-  postgres@pgslave:~$ master_basebackup 192.168.1.100; # Use IP of Master
+  postgres@pgslave:~$ ./slave_basebackup 192.168.1.100; # Use IP of Master
   ```
 4. Test it out by creating a table on Master (via psql) & it should be streamed to Slave. If it is not, check logs on slave:
 

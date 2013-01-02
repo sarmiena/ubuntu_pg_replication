@@ -14,8 +14,8 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
 
   ```
   administrator@pg:~$ sudo -s
-  root@pg:~# sysctl -w vm.overcommit_ratio=100
-  root@pg:~# sysctl -w vm.overcommit_memory=2
+  root@pg:~# sysctl -w vm.overcommit_ratio=100; # See notes below about OOM Killer
+  root@pg:~# sysctl -w vm.overcommit_memory=2; # See notes below about OOM Killer
   root@pg:~# apt-get install postgresql-9.1
   root@pg:~# su - postgres
   ```

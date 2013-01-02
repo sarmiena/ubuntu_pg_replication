@@ -20,31 +20,15 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   root@pg:~# sysctl -w vm.overcommit_ratio=100
   root@pg:~# sysctl -w vm.overcommit_memory=2
   ```
-  * Next, let's install PostgreSQL
+  * Next, let's install PostgreSQL & Ruby (we need it for the config file script)
   
   ```
   root@pg:~# apt-get install postgresql-9.1
+  root@pg:~# mkdir -p /var/lib/postgresql/9.1/main/pg_log
   root@pg:~# pg_ctlcluster 9.1 main stop; # We don't need PG to be running right now
+  root@pg:~# apt-get install ruby
   ```
-  * Then we need to set SHMMAX and SHMALL to allow PostgreSQL to load shared memory correctly:
-  
-  ```
-  root@pg:~# vi /etc/sysctl.d/*postgresql-shm.conf
 
-  # Maximum size of shared memory segment in bytes
-  # /!\ IMPORTANT /!\ - Only expecting PostgreSQL to be running on this server!
-  # Rule of thumb:
-  # Total system memory below 2GB?  set to 20% of total system memory
-  # Total system memory below 32GB? set to 25% of total system memory
-  # Total system memory above 32GB? set to 8GB
-  kernel.shmmax = 428867584
-
-  # Maximum total size of shared memory in pages (normally 4096 bytes)
-  # shmmax/4096
-  kernel.shmall = 104704
-  
-  root@pg:~# sysctl -f /etc/sysctl.d/30-postgresql-shm.conf
-  ```
   * Lastly, let's login as our postgres user for the next steps (Note: This user is created for you when
   PostgreSQL was installed. No need to create a new user):
   
@@ -54,11 +38,12 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
 2. Master:
 
   ```
-  postgres@pg:~$ vi /etc/postgres/9.1/main/pg_hba.conf
+  postgres@pg:~$ vi /etc/postgresql/9.1/main/pg_hba.conf
 
     # Add line:
     host    replication     rep_user        192.168.1.101/32         md5
 
+  postgres@pg:~$ pg_ctlcluster 9.1 main start
   postgres@pg:~$ psql
   postgres=# create user rep_user WITH REPLICATION PASSWORD 'seekrit';
   postgres=# \password
@@ -67,30 +52,47 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   * Run master_config_generator script (included in this repo)
   
   ```
+  postgres@pg:~$ git clone https://github.com/sarmiena/ubuntu_pg_replication.git
   postgres@pg:~$ ./master_config_generator --help; # -m and -f are required
-  postgres@pg:~$ ./master_config_generator --memory 2048 --file /etc/postgres/9.1/main/postgres.conf
+  postgres@pg:~$ ./master_config_generator --memory 2048 --file /etc/postgresql/9.1/main/postgresql.conf
   postgres@pg:~$ pg_ctlcluster 9.1 main restart
   ```
 3. Slave:
 
   ```
-  postgres@pgslave:~$ pg_ctlcluster 9.1 main stop
-  postgres@pgslave:~$ vi /etc/postgres/9.1/main/postgres.conf
+  postgres@pgslave:~$ vi /etc/postgresql/9.1/main/postgresql.conf
 
     listen_addresses = '*'
     hot_standby = on
 
-  postgres@pgslave:~$ vi /var/lib/postgres/9.1/main/recovery.conf
+  postgres@pgslave:~$ vi /var/lib/postgresql/9.1/main/recovery.conf
 
     standby_mode = on
-    primary_conninfo = "host=192.168.1.100 port=5433 user=rep_user password=seekrit"
+    primary_conninfo = "host=192.168.1.100 port=5432 user=rep_user password=seekrit"
   ```
   * Run slave_basebackup script (included in this repo)
   
   ```
   postgres@pgslave:~$ ./slave_basebackup 192.168.1.100; # Use IP of Master
   ```
-4. Test it out by creating a table on Master (via psql) & it should be streamed to Slave. If it is not, check logs on slave:
+4. Both machines
+  * We need to set SHMMAX and SHMALL to allow PostgreSQL to load shared memory correctly:
+  
+  ```
+  root@pg:~# vi /etc/sysctl.d/*postgresql-shm.conf
+
+  # Maximum size of shared memory segment in bytes
+  # /!\ IMPORTANT /!\ - Only expecting PostgreSQL to be running on this server!
+  # shared_buffer (from /etc/postgresql/9.1/main/postgresql.conf) + 20%
+  kernel.shmmax = 514641100 # CHANGE ME
+
+  # Maximum total size of shared memory in pages (normally 4096 bytes)
+  # shmmax/4096
+  kernel.shmall = 104704 # CHANGE ME
+  
+  root@pg:~# sysctl -p /etc/sysctl.d/30-postgresql-shm.conf
+  ```
+5. Test it out by creating a table on Master (via psql) & it should be streamed to Slave. If it is not, check logs on slave:
 
   ```
   postgres@pgslave:~$ tail -f /var/log/postgresql/postgresql-9.1-main.log

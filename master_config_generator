@@ -1,0 +1,114 @@
+#!/usr/bin/ruby
+require 'optparse'
+require 'fileutils'
+
+@connections = 100
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: ./pg_memory_config.rb --memory 1024 --file /path/to/postgresql.conf"
+
+  opts.on("-m", "--memory MEGABYTES", Integer, "Amount of system memory in megabytes") do |m|
+    @memory = m
+  end
+
+  opts.on("-f", "--file PG_CONFIG_FILE", "Your postgresql.conf file") do |f|
+    @file = f
+    unless File.exists?(@file)
+      raise "Cannot locate file #{@file}"
+    end
+  end
+
+  opts.on("-c", "--max-connections TOTAL", Integer, "(Optional) Total number of connections configured in PG (default 100)") do |m|
+    @connections = m
+
+    if @connections > 400
+      puts "WARNING: You set --max-connections to be more that 400. This is not advised, unless of course you have the hardware to back it."
+    end
+  end
+end.parse!
+
+puts "Error: Must specify --memory" unless @memory
+puts "Error: Must specify --file" unless @file
+
+def add_setting(parameter, current_settings, new_setting_value)
+  current_settings.map! do |line|
+    if line.match(/^(\s*|\t*)#{parameter}/)
+      "# #{line}"
+    else
+      line
+    end
+  end
+  current_settings << "#{parameter} = #{new_setting_value}\n"
+end
+
+if @memory.nil? || @file.nil?
+  puts "see --help"
+else
+  hardware = {
+    'listen_address'        => "'*'"
+    'shared_buffers'        => "#{(@memory*0.25).to_i}MB # 25% of memory to 8GB",
+    'work_mem'              => "#{((2*@memory)/@connections).to_i}MB # (2*RAM)/max_connections",
+    'maintenance_work_mem'  => "#{(@memory/16).to_i}MB # RAM/16",
+    'effective_cache_size'  => "#{(@memory/2).to_i}MB # RAM/2",
+    'max_connections'       => "#{@connections} # Should be no more than 400",
+    'random_page_cost'      => "3.0 # change to 2.0 if using SAN or 1.1 if using Amazon EBS"
+  }
+
+  logging = {
+    'log_destination'       => "'csvlog'",
+    'log_directory'         => "'pg_log'",
+    'logging_collector'     => 'on',
+    'log_filename'          => "'postgres-%Y-%m-%d_%H%M%S'",
+    'log_rotation_age'      => "1d",
+    'log_rotation_size'     => "1GB",
+    'log_min_duration_statement' => "250ms",
+    'log_checkpoints'       => "on",
+    'log_connections'       => "on",
+    'log_disconnections'    => "on",
+    'log_lock_waits'        => "on",
+    'log_temp_files'        => "on",
+    'log_line_prefix'       => "'%t '"
+  }
+
+  wal = {
+    'wal_level'                     => "hot_standby",
+    'wal_buffers'                   => "16MB",
+    'max_wal_senders'               => "5",
+    'wal_sender_delay'              => "1s",
+    'checkpoint_completion_target'  => "0.9 # Spread I/O up to 90% of checkpoint timeout",
+    'checkpoint_timeout'            => "10min",
+    'checkpoint_segments'           => "32",
+    'archive_mode'                  => "on",
+    'archive_command'               => "'cd .' # This should really be implemented, but is largely based on your setup. Go forth and investigate!",
+    'archive_timeout'               => "12h"
+  }
+
+  unique = nil
+
+  while File.exists?(@file + ".bak#{unique}") do
+    unique ||= 0
+    unique += 1
+  end
+
+  puts "Creating backup file #{@file}.bak#{unique}"
+  FileUtils::cp(@file, @file + ".bak#{unique}")
+
+  puts "Writing replication settings to file #{@file}"
+  settings = File.readlines(@file)
+  settings << "\n### BEGIN REPLICATION SETTINGS ###"
+  settings << "\n# Resource configuration is based on Christophe Pettus' PostgreSQL talks & slides:"
+  settings << "\n# http://thebuild.com/presentations/not-my-job-djangocon-us.pdf\n"
+
+
+  settings << "\n# Logging settings\n"
+  logging.each_pair { |k, v| add_setting(k, settings, v) }
+
+  settings << "\n# Hardware settings\n"
+  hardware.each_pair { |k, v| add_setting(k, settings, v) }
+
+  settings << "\n# WAL/Archive settings\n"
+  wal.each_pair { |k, v| add_setting(k, settings, v) }
+
+  File.open(@file, "w+") { |f| f.puts settings.join }
+  puts "Finished"
+end

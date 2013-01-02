@@ -1,0 +1,12 @@
+#!/bin/bash
+if [ "$#" -eq 1 ] 
+then
+  echo "Creating backup directory if it doesn't exist (/var/lib/postgresql/9.1/backups)"
+  mkdir -p /var/lib/postgresql/9.1/backups
+  echo "Starting base backup."
+  time pg_basebackup -h $1 -D /var/lib/postgresql/9.1/backups -U rep_user -v
+  echo "Starting postgres in standby mode."
+  pg_ctlcluster 9.1 main restart
+else
+  echo "Task aborted: Provide the master host. (e.g. master_basebackup 192.168.1.180)"
+fi

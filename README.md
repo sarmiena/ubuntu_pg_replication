@@ -1,7 +1,8 @@
-# PostgreSQL 9.1 replication tutorial on Ubuntu Server 12.04 LTS 
+# PostgreSQL 9.1 Streaming Replication on Ubuntu Server 12.04 LTS 
 This repo provides scripts and instructions to quickly setup PG replication on Ubuntu Server 12.04 LTS. It dives a 
 little further than most how-tos by including cliffnotes on Christoffe Pettus' talks on PG replication 
-(https://www.youtube.com/watch?v=k4f24zn5D4s).
+(https://www.youtube.com/watch?v=k4f24zn5D4s). It also incorporates some default cluster and system tuning options to
+avoid common problems.
 
 # The quick and dirty
 This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBox. Assume the following:
@@ -10,12 +11,14 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
 * Slave: 192.168.1.101 (hostname is 'pgslave')
 
 1. On both machines:
+
   ```
   administrator@pg:~$ sudo -s
   root@pg:~# apt-get install postgresql-9.1
   root@pg:~# su - postgres
   ```
 2. Master:
+
   ```
   postgres@pg:~$ vi /etc/postgres/9.1/main/pg_hba.conf
 
@@ -27,11 +30,13 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   postgres=# \password
   postgres=# \q
   ```
-  * Run pg_replication_config script
+  * Run pg_replication_config script (included in this repo)
+  
   ```
   postgres@pg:~$ ./pg_replication_config --memory 2048 --file /etc/postgres/9.1/main/postgres.conf
   ```
 3. Slave:
+
   ```
   postgres@pgslave:~$ vi /etc/postgres/9.1/main/postgres.conf
 
@@ -46,8 +51,9 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   ```
   * Run master_basebackup script
   ```
-  postgres@pgslave:~$ master_basebackup 192.168.1.182
+  postgres@pgslave:~$ master_basebackup 192.168.1.100
   ```
+4. Test it out by creating a table on Master (via psql) & it should be streamed to Slave
 
 # Important Notes (https://www.youtube.com/watch?v=k4f24zn5D4s)
 

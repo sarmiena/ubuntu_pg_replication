@@ -7,16 +7,51 @@ avoid common problems.
 # The quick and dirty
 This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBox. Assume the following:
 
-* Master: 192.168.1.100 (hostname is 'pg')
-* Slave: 192.168.1.101 (hostname is 'pgslave')
+* Master: 192.168.1.100 (hostname is 'pg' & has 2GB RAM)
+* Slave: 192.168.1.101 (hostname is 'pgslave' & has 2GB RAM)
 
 1. On both machines:
+  * First we want to turn off OOM killer. This is a highly discussed topic in the world of PostgreSQL admins. They go 
+    as far as saying "OOM Killer is a bug, not a feature (on PostgreSQL servers)". You also might want to watch
+    see https://www.youtube.com/watch?v=k4f24zn5D4s#t=36m22s:
 
   ```
   administrator@pg:~$ sudo -s
-  root@pg:~# sysctl -w vm.overcommit_ratio=100; # https://www.youtube.com/watch?v=k4f24zn5D4s#t=36m22s
-  root@pg:~# sysctl -w vm.overcommit_memory=2; # https://www.youtube.com/watch?v=k4f24zn5D4s#t=36m22s
+  root@pg:~# sysctl -w vm.overcommit_ratio=100
+  root@pg:~# sysctl -w vm.overcommit_memory=2
+  ```
+  
+  * Next, let's install PostgreSQL
+  
+  ```
   root@pg:~# apt-get install postgresql-9.1
+  root@pg:~# pg_ctlcluster 9.1 main stop; # We don't need PG to be running right now
+  ```
+
+  * Then we need to set SHMMAX and SHMALL to allow PostgreSQL to load shared memory correctly:
+  
+  ```
+  root@pg:~# vi /etc/sysctl.d/*postgresql-shm.conf
+
+  # Maximum size of shared memory segment in bytes
+  # /!\ IMPORTANT /!\ - Only expecting PostgreSQL to be running on this server!
+  # Rule of thumb:
+  # Total system memory below 2GB?  set to 20% of total system memory
+  # Total system memory below 32GB? set to 25% of total system memory
+  # Total system memory above 32GB? set to 8GB
+  kernel.shmmax = 428867584
+
+  # Maximum total size of shared memory in pages (normally 4096 bytes)
+  # shmmax/4096
+  kernel.shmall = 107216896
+  
+  root@pg:~# sysctl -f /etc/sysctl.d/30-postgresql-shm.conf
+  ```
+  
+  * Lastly, let's login as our postgres user for the next steps (Note: This user is created for you when
+  PostgreSQL was installed. No need to create a new user):
+  
+  ```
   root@pg:~# su - postgres
   ```
 2. Master:
@@ -128,22 +163,22 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
         * sysctl -w kernel.shmmax = (value)
         * sysctl -w kernel.shmall = (value)/4096 #shmmll is in pages
   * shared_buffers
-    * Below 2GB? - set to 20% of total system memory
-    * Below 32GB - set to 25% of total system memory
-    * Above 32GB - set to 8GB
+    * If total system memory below 2GB then set to 20% of total system memory
+    * If total system memory below 32GB then set to 25% of total system memory
+    * If total system memory above 32GB then set to 8GB
   * OOM Killer Considered Harmful
     * The Linux OOM killer is a bug, not a feature, on Postresql servers
       * vm.overcommit_ratio = 100
       * vm.overcommit_memory = 2
       * Swap = RAM
   * work_mem: 
-    * how much memory postgres is allowed to use for a working operation (e.g. join table, sort table, etc).
-    * if it cannot perform the operation with this amount of memory, then it performs the operation on disk (ouch).
-    * does this for every operation in the entire system. e.g. if you have 23 joins going at the same time, then 23*work_mem is used.
+    * How much memory postgres is allowed to use for a working operation (e.g. join table, sort table, etc).
+    * If it cannot perform the operation with this amount of memory, then it performs the operation on disk (ouch).
+    * Does this for every operation in the entire system. e.g. if you have 23 joins going at the same time, then 23*work_mem is used.
     * Start low: 32-64MB
-    * Tuning: 
-      *Look for 'temporary file' lines in logs
-      * Set to 2-3x the largest temp file you see. (extra padding because jobs need more memory than the size of the temp file to process work) -- this can lead to HUGE performance increases
+    * /!\ IMPORTANT Tuning Information /!\: 
+      * Look for 'temporary file' lines in logs
+      * Set to 2-3x the largest temp file you see. (extra padding because jobs need more memory than the size of the temp file to process work) -- this can lead to _*HUGE*_ performance increases
       * But be careful: It can use that amount of memory per planner node.
   * maintenance_work_mem (amount of memory allowable for VACUUM)
     * 10% of system memory. up to 1 GB

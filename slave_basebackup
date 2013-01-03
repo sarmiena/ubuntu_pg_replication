@@ -4,7 +4,10 @@ then
   echo "Creating backup directory if it doesn't exist (/var/lib/postgresql/9.1/backups)"
   mkdir -p /var/lib/postgresql/9.1/backups
   echo "Starting base backup."
-  time pg_basebackup -h $1 -D /var/lib/postgresql/9.1/backups -U rep_user -v
+  #time pg_basebackup -h $1 -D /var/lib/postgresql/9.1/backups -U rep_user -v
+  time pg_basebackup -h $1 -D /var/lib/postgresql/9.1/slave-backups-tmp -U rep_user -v -Ft -z
+  tar --exclude=pg_log --exclude=pg_xlog -xvf /var/lib/postgresql/9.1/slavbe-backups-tmp/base.tar.gz -C /var/lib/postgresql/9.1/main
+  rm -rf /var/lib/postgresql/9.1/slave-backups-tmp
   echo "Starting postgres in standby mode."
   pg_ctlcluster 9.1 main restart
 else

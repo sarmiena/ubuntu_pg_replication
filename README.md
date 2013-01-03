@@ -48,12 +48,12 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   postgres=# \password
   postgres=# \q
   ```
-  * Run master_config_generator script (included in this repo)
+  * Run config_generator script (included in this repo)
   
   ```
   postgres@pg:~$ git clone https://github.com/sarmiena/ubuntu_pg_replication.git
-  postgres@pg:~$ ./master_config_generator --help; # -m and -f are required
-  postgres@pg:~$ ./master_config_generator --memory 2048 --file /etc/postgresql/9.1/main/postgresql.conf
+  postgres@pg:~$ ./ubuntu_pg_replication/config_generator --help; # -m and -f are required
+  postgres@pg:~$ ./ubuntu_pg_replication/config_generator --memory 2048 --file /etc/postgresql/9.1/main/postgresql.conf
   postgres@pg:~$ pg_ctlcluster 9.1 main restart
   ```
 3. Both machines
@@ -76,11 +76,8 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
 4. Slave:
 
   ```
-  postgres@pgslave:~$ vi /etc/postgresql/9.1/main/postgresql.conf
-
-    listen_addresses = '*'
-    hot_standby = on
-
+  postgres@pgslave:~$ git clone https://github.com/sarmiena/ubuntu_pg_replication.git
+  postgres@pgslave:~$ ./ubuntu_pg_replication/config_generator --slave --memory 2048 --file /etc/postgresql/9.1/main/postgresql.conf
   postgres@pgslave:~$ vi /var/lib/postgresql/9.1/main/recovery.conf
 
     standby_mode = on

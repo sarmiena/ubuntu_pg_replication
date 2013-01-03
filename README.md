@@ -55,7 +55,7 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   postgres@pg:~$ ./ubuntu_pg_replication/config_generator --help; # -m and -f are required
   postgres@pg:~$ ./ubuntu_pg_replication/config_generator --memory 2048 --file /etc/postgresql/9.1/main/postgresql.conf
   ```
-3. Both machines
+3. *Both machines*
   * We need to set SHMMAX and SHMALL to allow PostgreSQL to load shared memory correctly. *IMPORTANT*: You must read your
     /etc/postgresql/9.1/main/postgresql.conf file and reference the shared_buffer parameter for calculating these kernel
     settings:
@@ -84,7 +84,7 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   postgres@pgslave:~$ vi /var/lib/postgresql/9.1/main/recovery.conf
 
     standby_mode = on
-    primary_conninfo = "host=192.168.1.100 port=5432 user=rep_user password=seekrit"
+    primary_conninfo = 'host=192.168.1.100 port=5432 user=rep_user password=seekrit'
   ```
   * Run slave_basebackup script (included in this repo)
   

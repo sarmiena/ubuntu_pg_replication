@@ -39,9 +39,9 @@ else
     time pg_basebackup -h $MASTER_ADDRESS -D /var/lib/postgresql/9.1/slave-backups-tmp -U $SLAVE_USER -v -Ft -z
     if [[ $? -eq 0 ]]
     then
-      echo "\nUntarring file and moving data to /var/lib/postgresql/9.1/main"
+      echo -e "\nUntarring file and moving data to /var/lib/postgresql/9.1/main"
       tar --exclude=pg_log --exclude=pg_xlog -xvf /var/lib/postgresql/9.1/slave-backups-tmp/base.tar.gz -C /var/lib/postgresql/9.1/main
-      echo "\nRemoving basebackup tar file (cleaning up)"
+      echo -e "\nRemoving basebackup tar file (cleaning up)"
       rm -rf /var/lib/postgresql/9.1/slave-backups-tmp
       echo "Starting postgres in standby mode."
       pg_ctlcluster 9.1 main restart

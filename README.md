@@ -54,10 +54,11 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   postgres@pg:~$ git clone https://github.com/sarmiena/ubuntu_pg_replication.git
   postgres@pg:~$ ./ubuntu_pg_replication/config_generator --help; # -m and -f are required
   postgres@pg:~$ ./ubuntu_pg_replication/config_generator --memory 2048 --file /etc/postgresql/9.1/main/postgresql.conf
-  postgres@pg:~$ pg_ctlcluster 9.1 main restart
   ```
 3. Both machines
-  * We need to set SHMMAX and SHMALL to allow PostgreSQL to load shared memory correctly:
+  * We need to set SHMMAX and SHMALL to allow PostgreSQL to load shared memory correctly. *IMPORTANT*: You must read your
+    /etc/postgresql/9.1/main/postgresql.conf file and reference the shared_buffer parameter for calculating these kernel
+    settings:
   
   ```
   root@pg:~# vi /etc/sysctl.d/*postgresql-shm.conf
@@ -72,6 +73,8 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   kernel.shmall = 104704 # CHANGE ME
   
   root@pg:~# sysctl -p /etc/sysctl.d/30-postgresql-shm.conf
+  root@pg:~# su - postgres
+  postgres@pg:~$ pg_ctlcluster 9.1 main restart
   ```
 4. Slave:
 

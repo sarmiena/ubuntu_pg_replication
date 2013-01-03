@@ -25,6 +25,10 @@ OptionParser.new do |opts|
       puts "WARNING: You set --max-connections to be more that 400. This is not advised, unless of course you have the hardware to back it."
     end
   end
+
+  opts.on("-s", "--slave", "(Optional) Flag that designates that this machine is the slave") do |s|
+    @slave = true
+  end
 end.parse!
 
 puts "Error: Must specify --memory" unless @memory
@@ -110,7 +114,8 @@ else
   puts "Creating backup file #{@file}.bak#{unique}"
   FileUtils::cp(@file, @file + ".bak#{unique}")
 
-  puts "Writing replication settings to file #{@file}"
+  puts "Writing #{@slave ? 'SLAVE' : 'MASTER'} replication settings to file #{@file}"
+
   settings = File.readlines(@file)
   settings << "\n### BEGIN REPLICATION SETTINGS ###"
   settings << "\n# Resource configuration is based on Christophe Pettus' PostgreSQL talks & slides:"
@@ -125,6 +130,11 @@ else
 
   settings << "\n# WAL/Archive settings\n"
   wal.each_pair { |k, v| add_setting(k, settings, v) }
+
+  if @slave
+    settings << "\n# SLAVE setting\n"
+    add_setting('hot_standby', settings, "'on'")
+  end
 
   File.open(@file, "w+") { |f| f.puts settings.join }
   puts "Finished"

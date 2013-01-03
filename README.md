@@ -55,7 +55,7 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   postgres@pg:~$ ./ubuntu_pg_replication/config_generator --help; # -m and -f are required
   postgres@pg:~$ ./ubuntu_pg_replication/config_generator --memory 2048 --file /etc/postgresql/9.1/main/postgresql.conf
   ```
-3. Both machines
+3. BOTH MACHINES (Very important step -- otheriwse PostgreSQL will not start)
   * We need to set SHMMAX and SHMALL to allow PostgreSQL to load shared memory correctly. *IMPORTANT*: You must read your
     /etc/postgresql/9.1/main/postgresql.conf file and reference the shared_buffer parameter for calculating these kernel
     settings:
@@ -89,7 +89,8 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   * Run slave_basebackup script (included in this repo)
   
   ```
-  postgres@pgslave:~$ ./slave_basebackup 192.168.1.100; # Use IP of Master
+  postgres@pgslave:~$ ./ubuntu_pg_replication/slave_basebackup -help
+  postgres@pgslave:~$ ./ubuntu_pg_replication/slave_basebackup -h 192.168.1.100 -U rep_user
   ```
 5. Test it out by creating a table on Master (via psql) & it should be streamed to Slave. If it is not, check logs on slave:
 

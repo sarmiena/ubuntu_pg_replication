@@ -24,7 +24,6 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   
   ```
   root@pg:~# apt-get install postgresql-9.1
-  root@pg:~# mkdir -p /var/lib/postgresql/9.1/main/pg_log
   root@pg:~# pg_ctlcluster 9.1 main stop; # We don't need PG to be running right now
   root@pg:~# apt-get install ruby
   ```
@@ -79,6 +78,7 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
 4. Slave:
 
   ```
+  postgres@pgslave:~$ pg_ctlcluster 9.1 main stop
   postgres@pgslave:~$ git clone https://github.com/sarmiena/ubuntu_pg_replication.git
   postgres@pgslave:~$ ./ubuntu_pg_replication/config_generator --slave --memory 2048 --file /etc/postgresql/9.1/main/postgresql.conf
   postgres@pgslave:~$ vi /var/lib/postgresql/9.1/main/recovery.conf

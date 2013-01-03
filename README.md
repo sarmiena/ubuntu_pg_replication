@@ -28,7 +28,6 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   root@pg:~# pg_ctlcluster 9.1 main stop; # We don't need PG to be running right now
   root@pg:~# apt-get install ruby
   ```
-
   * Lastly, let's login as our postgres user for the next steps (Note: This user is created for you when
   PostgreSQL was installed. No need to create a new user):
   
@@ -57,7 +56,24 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   postgres@pg:~$ ./master_config_generator --memory 2048 --file /etc/postgresql/9.1/main/postgresql.conf
   postgres@pg:~$ pg_ctlcluster 9.1 main restart
   ```
-3. Slave:
+3. Both machines
+  * We need to set SHMMAX and SHMALL to allow PostgreSQL to load shared memory correctly:
+  
+  ```
+  root@pg:~# vi /etc/sysctl.d/*postgresql-shm.conf
+
+  # Maximum size of shared memory segment in bytes
+  # /!\ IMPORTANT /!\ - Only expecting PostgreSQL to be running on this server!
+  # shared_buffer (from /etc/postgresql/9.1/main/postgresql.conf) + 20%
+  kernel.shmmax = 514641100 # CHANGE ME
+
+  # Maximum total size of shared memory in pages (normally 4096 bytes)
+  # shmmax/4096
+  kernel.shmall = 104704 # CHANGE ME
+  
+  root@pg:~# sysctl -p /etc/sysctl.d/30-postgresql-shm.conf
+  ```
+4. Slave:
 
   ```
   postgres@pgslave:~$ vi /etc/postgresql/9.1/main/postgresql.conf
@@ -74,23 +90,6 @@ This setup was configured by creating 2 Ubuntu VM's on my laptop using VirtualBo
   
   ```
   postgres@pgslave:~$ ./slave_basebackup 192.168.1.100; # Use IP of Master
-  ```
-4. Both machines
-  * We need to set SHMMAX and SHMALL to allow PostgreSQL to load shared memory correctly:
-  
-  ```
-  root@pg:~# vi /etc/sysctl.d/*postgresql-shm.conf
-
-  # Maximum size of shared memory segment in bytes
-  # /!\ IMPORTANT /!\ - Only expecting PostgreSQL to be running on this server!
-  # shared_buffer (from /etc/postgresql/9.1/main/postgresql.conf) + 20%
-  kernel.shmmax = 514641100 # CHANGE ME
-
-  # Maximum total size of shared memory in pages (normally 4096 bytes)
-  # shmmax/4096
-  kernel.shmall = 104704 # CHANGE ME
-  
-  root@pg:~# sysctl -p /etc/sysctl.d/30-postgresql-shm.conf
   ```
 5. Test it out by creating a table on Master (via psql) & it should be streamed to Slave. If it is not, check logs on slave:
 
